@@ -278,28 +278,33 @@ def _fmt_date(dt: Optional[str]) -> str:
     return dt[:10]
 
 
-def _parse_period(start_date: str, end_date: str) -> Dict[str, str]:
+def _parse_period(start_date: str, end_date: str, slug: str) -> Dict[str, str]:
     """Constrói parâmetros de filtro de período para a API v4.
-    
-    A Google Health API v4 usa filter strings no formato:
-    data_type.interval.start_time >= "YYYY-MM-DDT00:00:00Z"
+
+    O prefixo deve ser o nome do data type em snake_case (ex: 'heart_rate').
+    Formato: {slug}.interval.start_time >= "YYYY-MM-DDT00:00:00Z"
     """
     s = _fmt_date(start_date)
     e = _fmt_date(end_date)
+    t = slug.replace("-", "_")
     return {
         "filter": (
-            f'data_type.interval.start_time >= "{s}T00:00:00Z" AND ' 
-            f'data_type.interval.end_time <= "{e}T23:59:59Z"'
+            f'{t}.interval.start_time >= "{s}T00:00:00Z" AND '
+            f'{t}.interval.end_time <= "{e}T23:59:59Z"'
         )
     }
 
 
-def _parse_daily_period(start_date: str, end_date: str) -> Dict[str, str]:
-    """Constrói filtros para tipos de dado Daily (sem interval — usa civil_time)."""
+def _parse_daily_period(start_date: str, end_date: str, slug: str) -> Dict[str, str]:
+    """Constrói filtros para tipos de dado Daily (sem interval — usa date).
+
+    Formato: {slug}.date >= "YYYY-MM-DD"
+    """
     s = _fmt_date(start_date)
     e = _fmt_date(end_date)
+    t = slug.replace("-", "_")
     return {
-        "filter": f'data_type.date >= "{s}" AND data_type.date <= "{e}"'
+        "filter": f'{t}.date >= "{s}" AND {t}.date <= "{e}"'
     }
 
 
@@ -593,7 +598,7 @@ async def health_get_steps(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['steps']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['steps']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -625,7 +630,7 @@ async def health_get_distance(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['distance']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['distance']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -657,7 +662,7 @@ async def health_get_active_energy(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['active_energy_burned']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['active_energy_burned']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -688,10 +693,9 @@ async def health_get_active_minutes(params: DataTypeQueryInput) -> str:
         str: JSON com minutos ativos e active zone minutes.
     """
     try:
-        period = _parse_period(params.start_date, params.end_date)
         active, azm = await asyncio.gather(
-            _health_get(f"{DATA_TYPES['active_minutes']}/dataPoints", params={**period, "pageSize": params.limit}),
-            _health_get(f"{DATA_TYPES['active_zone_minutes']}/dataPoints", params={**period, "pageSize": params.limit}),
+            _health_get(f"{DATA_TYPES['active_minutes']}/dataPoints", params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['active_minutes']), "pageSize": params.limit}),
+            _health_get(f"{DATA_TYPES['active_zone_minutes']}/dataPoints", params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['active_zone_minutes']), "pageSize": params.limit}),
         )
         return json.dumps({"active_minutes": active, "active_zone_minutes": azm}, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -724,7 +728,7 @@ async def health_get_vo2max(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['daily_vo2_max']}/dataPoints",
-            params=_parse_daily_period(params.start_date, params.end_date),
+            params=_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['daily_vo2_max']),
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -756,7 +760,7 @@ async def health_get_exercises(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['exercise']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['exercise']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -794,7 +798,7 @@ async def health_get_heart_rate(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['heart_rate']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['heart_rate']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -827,7 +831,7 @@ async def health_get_resting_heart_rate(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['daily_resting_heart_rate']}/dataPoints",
-            params=_parse_daily_period(params.start_date, params.end_date),
+            params=_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['daily_resting_heart_rate']),
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -861,7 +865,7 @@ async def health_get_hrv(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['daily_heart_rate_variability']}/dataPoints",
-            params=_parse_daily_period(params.start_date, params.end_date),
+            params=_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['daily_heart_rate_variability']),
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -894,7 +898,7 @@ async def health_get_heart_rate_zones(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['daily_heart_rate_zones']}/dataPoints",
-            params=_parse_daily_period(params.start_date, params.end_date),
+            params=_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['daily_heart_rate_zones']),
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -927,7 +931,7 @@ async def health_get_spo2(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['daily_oxygen_saturation']}/dataPoints",
-            params=_parse_daily_period(params.start_date, params.end_date),
+            params=_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['daily_oxygen_saturation']),
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -959,7 +963,7 @@ async def health_get_weight(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['weight']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['weight']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -997,7 +1001,7 @@ async def health_get_sleep(params: DataTypeQueryInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['sleep']}/dataPoints",
-            params={**_parse_period(params.start_date, params.end_date), "pageSize": params.limit},
+            params={**_parse_period(params.start_date, params.end_date, DATA_TYPES['sleep']), "pageSize": params.limit},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -1036,7 +1040,7 @@ async def health_get_nutrition_log(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             f"{DATA_TYPES['food_log']}/dataPoints",
-            params={**_parse_daily_period(params.start_date, params.end_date), "pageSize": 100},
+            params={**_parse_daily_period(params.start_date, params.end_date, DATA_TYPES['food_log']), "pageSize": 100},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -1070,7 +1074,7 @@ async def health_get_calories_consumed(params: DateRangeInput) -> str:
     try:
         data = await _health_get(
             "nutrition-log/dataPoints",
-            params={**_parse_daily_period(params.start_date, params.end_date), "pageSize": 100},
+            params={**_parse_daily_period(params.start_date, params.end_date, "nutrition-log"), "pageSize": 100},
         )
         return json.dumps(data, ensure_ascii=False, indent=2)
     except httpx.HTTPStatusError as e:
@@ -1111,7 +1115,7 @@ async def health_list_steps_data_sources(params: DataTypeQueryInput) -> str:
         data = await _health_get(
             f"{DATA_TYPES['steps']}/dataPoints",
             params={
-                **_parse_period(params.start_date, params.end_date),
+                **_parse_period(params.start_date, params.end_date, DATA_TYPES['steps']),
                 "pageSize": params.limit,
             },
         )
@@ -1216,28 +1220,26 @@ async def health_get_daily_summary(params: SingleDateInput) -> str:
         str: JSON com todas as métricas do dia agregadas.
     """
     date = params.date
-    period = _parse_period(date, date)
-    daily_period = _parse_daily_period(date, date)
 
-    async def safe_get(endpoint, extra_params=None, use_daily_period=False):
+    async def safe_get(slug, extra_params=None, use_daily_period=False):
         try:
-            base = daily_period if use_daily_period else period
-            return await _health_get(endpoint, params={**base, **(extra_params or {})})
+            base = _parse_daily_period(date, date, slug) if use_daily_period else _parse_period(date, date, slug)
+            return await _health_get(f"{slug}/dataPoints", params={**base, **(extra_params or {})})
         except Exception as ex:
             return {"error": type(ex).__name__}
 
     results = await asyncio.wait_for(
         asyncio.gather(
-            safe_get(f"{DATA_TYPES['steps']}/dataPoints", {"pageSize": 50}),
-            safe_get(f"{DATA_TYPES['distance']}/dataPoints", {"pageSize": 50}),
-            safe_get(f"{DATA_TYPES['active_energy_burned']}/dataPoints", {"pageSize": 50}),
-            safe_get(f"{DATA_TYPES['daily_resting_heart_rate']}/dataPoints", use_daily_period=True),
-            safe_get(f"{DATA_TYPES['daily_heart_rate_variability']}/dataPoints", use_daily_period=True),
-            safe_get(f"{DATA_TYPES['daily_oxygen_saturation']}/dataPoints", use_daily_period=True),
-            safe_get(f"{DATA_TYPES['daily_heart_rate_zones']}/dataPoints", use_daily_period=True),
-            safe_get(f"{DATA_TYPES['sleep']}/dataPoints", {"pageSize": 10}),
-            safe_get(f"{DATA_TYPES['daily_vo2_max']}/dataPoints", use_daily_period=True),
-            safe_get(f"{DATA_TYPES['food_log']}/dataPoints", {"pageSize": 50}, use_daily_period=True),
+            safe_get(DATA_TYPES['steps'], {"pageSize": 50}),
+            safe_get(DATA_TYPES['distance'], {"pageSize": 50}),
+            safe_get(DATA_TYPES['active_energy_burned'], {"pageSize": 50}),
+            safe_get(DATA_TYPES['daily_resting_heart_rate'], use_daily_period=True),
+            safe_get(DATA_TYPES['daily_heart_rate_variability'], use_daily_period=True),
+            safe_get(DATA_TYPES['daily_oxygen_saturation'], use_daily_period=True),
+            safe_get(DATA_TYPES['daily_heart_rate_zones'], use_daily_period=True),
+            safe_get(DATA_TYPES['sleep'], {"pageSize": 10}),
+            safe_get(DATA_TYPES['daily_vo2_max'], use_daily_period=True),
+            safe_get(DATA_TYPES['food_log'], {"pageSize": 50}, use_daily_period=True),
         ),
         timeout=60.0,
     )
