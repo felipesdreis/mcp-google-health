@@ -1,0 +1,220 @@
+# =============================================================================
+# google-health-mcp — .gitignore
+# Stack: Python 3.10+, single-file MCP server
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+Env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+eggs/
+.eggs/
+wheels/
+*.whl
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.tox/
+.nox/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+pytest.ini
+nosetests.xml
+
+# mypy / pyright / type checking
+.mypy_cache/
+.pytype/
+.pyre/
+pyrightconfig.json
+
+# Ruff / linting
+.ruff_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-python
+__pypackages__/
+
+# celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Sphinx docs
+docs/_build/
+docs/_autosummary/
+
+# -----------------------------------------------------------------------------
+# Credentials and secrets — NEVER commit these
+# -----------------------------------------------------------------------------
+
+# OAuth credentials and tokens (stored outside repo by design, but guard anyway)
+credentials.json
+tokens.json
+client_secret*.json
+*_credentials.json
+*_tokens.json
+
+# Generic secret files
+.env
+.env.*
+!.env.example
+*.secret
+secrets.json
+secrets.yaml
+secrets.yml
+service_account*.json
+*_service_account.json
+
+# -----------------------------------------------------------------------------
+# OS files
+# -----------------------------------------------------------------------------
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# -----------------------------------------------------------------------------
+# Editors and IDEs
+# -----------------------------------------------------------------------------
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.code-workspace
+
+# JetBrains (PyCharm, IntelliJ, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# TextMate
+*.tmproj
+*.tmproject
+tmtags
+
+# Spyder
+.spyderproject.db
+.spyproject
+
+# Rope (Python refactoring)
+.ropeproject
+
+# -----------------------------------------------------------------------------
+# Logs and runtime artifacts
+# -----------------------------------------------------------------------------
+*.log
+*.log.*
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# -----------------------------------------------------------------------------
+# MCP / Claude Desktop local config (project-level — keep out of VCS)
+# -----------------------------------------------------------------------------
+claude_desktop_config.json
+mcp_config.json
+.mcp.json
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.bak
+*.tmp
+*.temp
+*.orig
+*.patch
